@@ -37,6 +37,9 @@ const Timeline: React.FC = () => {
     edge: 'start' | 'end';
   } | null>(null);
 
+  // 添加拖拽位置指示器状态
+  const [dragIndicator, setDragIndicator] = useState<number | null>(null);
+
   // 开始拖动片段时的处理函数 / Handler for when clip drag starts
   const handleClipDragStart = (clip: VideoClip, e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', clip.id);
@@ -47,7 +50,25 @@ const Timeline: React.FC = () => {
     setDraggingClip(null);
   };
 
-  // 处理片段拖放 / Handle clip drop on timeline
+  // 修改处理拖拽悬停的函数
+  const handleDragOver = (e: React.DragEvent, trackIndex: number) => {
+    e.preventDefault();
+    if (!timelineRef.current) return;
+
+    const timelineRect = timelineRef.current.getBoundingClientRect();
+    const position = e.clientX - timelineRect.left;
+    // 转换为时间线上的位置
+    const snapPosition =
+      Math.round(position / timelineState.scale) * timelineState.scale;
+    setDragIndicator(snapPosition);
+  };
+
+  // 清除拖拽指示器
+  const handleDragLeave = () => {
+    setDragIndicator(null);
+  };
+
+  // 修改处理拖放的函数
   const handleTimelineDrop = (e: React.DragEvent, trackIndex: number) => {
     e.preventDefault();
     if (!draggingClip) return;
@@ -55,8 +76,8 @@ const Timeline: React.FC = () => {
     const timelineRect = timelineRef.current?.getBoundingClientRect();
     if (!timelineRect) return;
 
-    const dropPosition = e.clientX - timelineRect.left;
-    const newStart = Math.round(dropPosition / timelineState.scale);
+    // 使用对齐后的位置
+    const newStart = Math.round(dragIndicator! / timelineState.scale);
 
     const updatedTracks = timelineState.tracks.map((track, index) => {
       if (index === trackIndex) {
@@ -89,6 +110,9 @@ const Timeline: React.FC = () => {
       ...prev,
       tracks: updatedTracks,
     }));
+
+    // 清除拖拽指示器
+    setDragIndicator(null);
   };
 
   // 处理片段大小调整 / Handle clip resize
@@ -147,11 +171,22 @@ const Timeline: React.FC = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        {/* 添加拖拽指示器 */}
+        {dragIndicator !== null && (
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-blue-500 pointer-events-none z-10"
+            style={{
+              left: `${dragIndicator}px`,
+              opacity: 0.7,
+            }}
+          />
+        )}
         {timelineState.tracks.map((track, trackIndex) => (
           <div
             key={track.id}
             className="relative h-24 border-b border-gray-700"
-            onDragOver={(e) => e.preventDefault()}
+            onDragOver={(e) => handleDragOver(e, trackIndex)}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleTimelineDrop(e, trackIndex)}
           >
             {track.clips.map((clip) => (
