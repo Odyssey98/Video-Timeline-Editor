@@ -60,14 +60,10 @@ const Timeline: React.FC = () => {
 
     const updatedTracks = timelineState.tracks.map((track, index) => {
       if (index === trackIndex) {
-        const updatedClips = [...track.clips];
-        if (draggingClip.track !== trackIndex) {
-          // Remove from old track
-          const oldTrack = timelineState.tracks[draggingClip.track];
-          oldTrack.clips = oldTrack.clips.filter(
-            (c) => c.id !== draggingClip.id
-          );
-        }
+        // 首先移除当前轨道中的拖拽片段
+        const updatedClips = track.clips.filter(
+          (c) => c.id !== draggingClip.id
+        );
 
         const clipDuration = draggingClip.end - draggingClip.start;
         const updatedClip = {
@@ -79,6 +75,12 @@ const Timeline: React.FC = () => {
 
         updatedClips.push(updatedClip);
         return { ...track, clips: updatedClips };
+      } else if (draggingClip.track === index) {
+        // 从原轨道中移除片段（如果是跨轨道拖拽）
+        return {
+          ...track,
+          clips: track.clips.filter((c) => c.id !== draggingClip.id),
+        };
       }
       return track;
     });
