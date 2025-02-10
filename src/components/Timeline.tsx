@@ -51,7 +51,7 @@ const Timeline: React.FC = () => {
   };
 
   // 修改处理拖拽悬停的函数
-  const handleDragOver = (e: React.DragEvent, trackIndex: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     if (!timelineRef.current) return;
 
@@ -185,7 +185,7 @@ const Timeline: React.FC = () => {
           <div
             key={track.id}
             className="relative h-24 border-b border-gray-700"
-            onDragOver={(e) => handleDragOver(e, trackIndex)}
+            onDragOver={(e) => handleDragOver(e)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleTimelineDrop(e, trackIndex)}
           >
